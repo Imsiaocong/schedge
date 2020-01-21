@@ -1,29 +1,24 @@
 package api;
 
+import static io.javalin.plugin.openapi.dsl.DocumentedContentKt.guessContentType;
+
+import api.models.Course;
+import api.models.Section;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.dsl.OpenApiDocumentation;
 import io.swagger.v3.oas.models.examples.Example;
-import org.jetbrains.annotations.NotNull;
-import models.Semester;
-import models.SubjectCode;
-import models.Term;
-import api.models.*;
-import services.SelectCourses;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
-
-import static io.javalin.plugin.openapi.dsl.DocumentedContentKt.guessContentType;
+import scraping.models.Semester;
+import scraping.models.SubjectCode;
+import scraping.models.Term;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import services.SelectCourses;
 
 class CoursesEndpoint extends Endpoint {
-
-  enum SemesterCode {
-    su,
-    sp,
-    fa,
-    ja;
-  }
 
   @NotNull
   @Override
@@ -71,12 +66,16 @@ class CoursesEndpoint extends Endpoint {
 
           ArrayList<Section> sections = new ArrayList<>();
 
-          openApiParam.getContent()
-              .get(guessContentType(Course.class))
-              .addExamples("course",
-                           new Example().value(new Course(
-                               "Intro to Computer SCI", "101",
-                               new SubjectCode("CSCI", "UA"), sections)));
+          try {
+            openApiParam.getContent()
+                .get(guessContentType(Course.class))
+                .addExamples("course",
+                             new Example().value(new Course(
+                                 "Intro to Computer SCI", "101",
+                                 new SubjectCode("CSCI", "UA"), sections)));
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
         });
   }
 
@@ -114,4 +113,6 @@ class CoursesEndpoint extends Endpoint {
       ctx.json(SelectCourses.selectCourses(logger, term, subject));
     };
   }
+
+  enum SemesterCode { su, sp, fa, ja }
 }

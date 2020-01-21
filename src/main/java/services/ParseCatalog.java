@@ -1,12 +1,11 @@
 package services;
 
-import java.time.DayOfWeek;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.*;
 import kotlin.text.StringsKt;
-import models.*;
-import scraping.models.*;
+import scraping.models.SectionStatus;
+import scraping.models.SectionType;
+import scraping.models.SubjectCode;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -17,7 +16,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.UtilsKt;
+import scraping.models.Course;
+import scraping.models.Meeting;
+import scraping.models.Section;
 
 /**
  * Parses a catalog string in a stream.
@@ -25,34 +26,11 @@ import utils.UtilsKt;
  * @author Albert Liu
  */
 public class ParseCatalog implements Iterator<Course> {
-  private Logger logger;
   private static DateTimeFormatter timeParser =
       DateTimeFormat.forPattern("MM/dd/yyyy h:mma").withLocale(Locale.ENGLISH);
   private Iterator<Element> elements;
   private Element currentElement;
-
-  public static List<Course> parse(Logger logger, String data)
-      throws IOException {
-    logger.debug("parsing raw catalog data...");
-    ArrayList<Course> courses = new ArrayList<>();
-    new ParseCatalog(logger, Jsoup.parse(data))
-        .forEachRemaining(c -> courses.add(c));
-    return courses;
-  }
-
-  public static List<Integer> parseRegistrationNumber(Logger logger, String data)
-          throws IOException{
-    logger.debug("parsing raw catalog registration numbers data...");
-    Document secData = Jsoup.parse(data);
-    Elements fields = secData.select("div.section-content > div.section-body");
-    ArrayList<Integer> registrationNumbers = new ArrayList<>();
-    for (Element child : fields) {
-      if(child.text().contains("Section")) {
-        registrationNumbers.add(Integer.parseInt(child.text().split("[\\(\\)]")[1]));
-      }
-    }
-    return registrationNumbers;
-  }
+  private Logger logger;
 
   private ParseCatalog(Logger logger, Document data) throws IOException {
     elements = data.select("div.primary-head ~ *").iterator();
@@ -69,6 +47,39 @@ public class ParseCatalog implements Iterator<Course> {
     } else if (currentElement.text().equals(
                    "No classes found matching your criteria.")) {
       currentElement = null; // We're done, nothing's here
+    }
+  }
+
+  public static List<Course> parse(Logger logger, String data)
+      throws IOException {
+    logger.debug("parsing raw catalog data...");
+    ArrayList<Course> courses = new ArrayList<>();
+    new ParseCatalog(logger, Jsoup.parse(data))
+        .forEachRemaining(c -> courses.add(c));
+    return courses;
+  }
+
+  public static List<Integer> parseRegistrationNumber(Logger logger,
+                                                      String data)
+      throws IOException {
+    logger.debug("parsing raw catalog registration numbers data...");
+    Document secData = Jsoup.parse(data);
+    Elements fields = secData.select("div.section-content > div.section-body");
+    ArrayList<Integer> registrationNumbers = new ArrayList<>();
+    for (Element child : fields) {
+      if (child.text().contains("Section")) {
+        registrationNumbers.add(
+            Integer.parseInt(child.text().split("[\\(\\)]")[1]));
+      }
+    }
+    return registrationNumbers;
+  }
+
+  private static <T> Optional<T> safeNext(Iterator<T> iterator) {
+    if (iterator.hasNext()) {
+      return Optional.of(iterator.next());
+    } else {
+      return Optional.empty();
     }
   }
 
@@ -111,8 +122,10 @@ public class ParseCatalog implements Iterator<Course> {
     return new SectionMetadata(
         registrationNumber, sectionCode, type, sectionData.get("Instructor"),
         SectionStatus.parseStatus(sectionData.get("Status")), meetings,
-            sectionData.containsKey("Topic") ? sectionData.get("Topic") : "",
-            sectionData.containsKey("Wait List Total") ? Integer.parseInt(sectionData.get("Wait List Total")) : 0);
+        sectionData.containsKey("Topic") ? sectionData.get("Topic") : "",
+        sectionData.containsKey("Wait List Total")
+            ? Integer.parseInt(sectionData.get("Wait List Total"))
+            : 0);
   }
 
   private HashMap<String, String> sectionFieldTable(Elements fields) {
@@ -219,7 +232,7 @@ public class ParseCatalog implements Iterator<Course> {
       Arrays.fill(daysList, Boolean.FALSE);
       for (int i = 0; i < beginDays.length() - 1; i += 2) {
         String dayString = beginDays.substring(i, i + 2);
-        int dayValue = UtilsKt.parseDayOfWeek(dayString).getValue();
+        int dayValue = Utils.parseDayOfWeek(dayString).getValue();
         logger.trace("day: {} translates to ", dayString, dayValue);
         daysList[dayValue % 7] = true;
       }
@@ -276,14 +289,6 @@ public class ParseCatalog implements Iterator<Course> {
       currentElement = null;
 
     return course.getCourse(sections);
-  }
-
-  private static <T> Optional<T> safeNext(Iterator<T> iterator) {
-    if (iterator.hasNext()) {
-      return Optional.of(iterator.next());
-    } else {
-      return Optional.empty();
-    }
   }
 
   /**
@@ -349,7 +354,8 @@ public class ParseCatalog implements Iterator<Course> {
 
     Section toLectureWithRecitations(ArrayList<Section> recitations) {
       return new Section(registrationNumber, sectionCode, instructor,
-                         SectionType.LEC, status, meetings, recitations, sectionName, waitlistTotal);
+                         SectionType.LEC, status, meetings, recitations,
+                         sectionName, waitlistTotal);
     }
 
     Section toSectionWithoutRecitations() {
