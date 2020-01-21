@@ -8,9 +8,9 @@ import com.github.ajalt.clikt.parameters.options.option
 import mu.KotlinLogging
 import utils.readFromFileOrStdin
 import services.JsonMapper
-import services.ParseCatalog
-import services.ParseSchoolSubjects
-import services.ParseSection
+import scraping.ParseCatalog
+import scraping.ParseSchoolSubjects
+import scraping.ParseSection
 import utils.writeToFileOrStdout
 
 // TODO Change this to package-level protected if that becomes a thing

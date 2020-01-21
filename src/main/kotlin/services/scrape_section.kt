@@ -7,7 +7,8 @@ import mu.KLogger
 import scraping.models.SectionAttribute
 import scraping.models.Subject
 import java.lang.Exception
-
+import scraping.ParseSection
+import scraping.ParseCatalog
 
 /**
  * Scraping the catalogs from Albert Mobile given one registration number

@@ -8,6 +8,7 @@ import models.SubjectCode
 import models.Term
 import mu.KotlinLogging
 import scraping.models.Course
+import scraping.ParseSchoolSubjects
 import services.*
 import utils.writeToFileOrStdout
 

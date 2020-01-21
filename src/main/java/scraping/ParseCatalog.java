@@ -1,4 +1,4 @@
-package services;
+package scraping;
 
 import java.time.DayOfWeek;
 import java.io.IOException;
@@ -40,15 +40,17 @@ public class ParseCatalog implements Iterator<Course> {
     return courses;
   }
 
-  public static List<Integer> parseRegistrationNumber(Logger logger, String data)
-          throws IOException{
+  public static List<Integer> parseRegistrationNumber(Logger logger,
+                                                      String data)
+      throws IOException {
     logger.debug("parsing raw catalog registration numbers data...");
     Document secData = Jsoup.parse(data);
     Elements fields = secData.select("div.section-content > div.section-body");
     ArrayList<Integer> registrationNumbers = new ArrayList<>();
     for (Element child : fields) {
-      if(child.text().contains("Section")) {
-        registrationNumbers.add(Integer.parseInt(child.text().split("[\\(\\)]")[1]));
+      if (child.text().contains("Section")) {
+        registrationNumbers.add(
+            Integer.parseInt(child.text().split("[\\(\\)]")[1]));
       }
     }
     return registrationNumbers;
@@ -111,8 +113,10 @@ public class ParseCatalog implements Iterator<Course> {
     return new SectionMetadata(
         registrationNumber, sectionCode, type, sectionData.get("Instructor"),
         SectionStatus.parseStatus(sectionData.get("Status")), meetings,
-            sectionData.containsKey("Topic") ? sectionData.get("Topic") : "",
-            sectionData.containsKey("Wait List Total") ? Integer.parseInt(sectionData.get("Wait List Total")) : 0);
+        sectionData.containsKey("Topic") ? sectionData.get("Topic") : "",
+        sectionData.containsKey("Wait List Total")
+            ? Integer.parseInt(sectionData.get("Wait List Total"))
+            : 0);
   }
 
   private HashMap<String, String> sectionFieldTable(Elements fields) {
@@ -349,7 +353,8 @@ public class ParseCatalog implements Iterator<Course> {
 
     Section toLectureWithRecitations(ArrayList<Section> recitations) {
       return new Section(registrationNumber, sectionCode, instructor,
-                         SectionType.LEC, status, meetings, recitations, sectionName, waitlistTotal);
+                         SectionType.LEC, status, meetings, recitations,
+                         sectionName, waitlistTotal);
     }
 
     Section toSectionWithoutRecitations() {

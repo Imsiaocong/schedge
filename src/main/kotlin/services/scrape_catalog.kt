@@ -6,6 +6,7 @@ import scraping.models.Course
 import models.SubjectCode
 import models.Term
 import mu.KLogger
+import scraping.ParseCatalog
 
 /**
  * Scraping the catalogs from Albert Mobile given multiple subjecs
