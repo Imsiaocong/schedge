@@ -1,35 +1,29 @@
 package api;
 
+import api.v1.endpoints.*;
 import io.javalin.Javalin;
-import io.javalin.http.Handler;
+import io.javalin.http.staticfiles.Location;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.dsl.OpenApiBuilder;
-import io.javalin.plugin.openapi.dsl.OpenApiDocumentation;
-import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
-import models.SubjectCode;
-import models.Term;
-import org.jetbrains.annotations.NotNull;
-import services.JsonMapper;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.List;
-import services.SelectCourses;
+import java.net.URL;
+import java.util.stream.Collectors;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import models.Semester;
-import api.SubjectsEndpoint;
-import java.io.InputStream;
-import java.util.stream.Collectors;
+import utils.Utils;
 
 public class App {
-  public static void run() {
 
-    // @TODO Use https://javalin.io/plugins/openapi#getting-started as guide for
-    // documenting API, then use Redoc for docs generation
+  private static final Logger logger = LoggerFactory.getLogger("api.App");
+
+  public static void run() {
     Javalin app =
         Javalin
             .create(config -> {
@@ -49,7 +43,7 @@ public class App {
               config.enableWebjars();
               config.registerPlugin(new OpenApiPlugin(options));
             })
-            .start(80);
+            .start(8080);
     Logger logger = LoggerFactory.getLogger("app");
 
     String docs = new BufferedReader(
@@ -67,35 +61,22 @@ public class App {
     new SubjectsEndpoint().addTo(app);
     new SchoolsEndpoint().addTo(app);
     new CoursesEndpoint().addTo(app);
-  }
-}
-
-abstract class Endpoint {
-
-  @NotNull abstract String getPath();
-
-  @NotNull
-  abstract OpenApiDocumentation configureDocs(OpenApiDocumentation docs);
-
-  @NotNull abstract Handler getHandler();
-
-  public final void addTo(Javalin app) {
-    app.get(getPath(),
-            OpenApiBuilder.documented(configureDocs(OpenApiBuilder.document()),
-                                      getHandler()));
-  }
-}
-
-class ApiError {
-  // private int status;
-  private String message;
-
-  ApiError(String message) {
-    // this.status = status;
-    this.message = message;
+    new SearchEndpoint().addTo(app);
+    new SectionEndpoint().addTo(app);
   }
 
-  // public int getStatus() { return status; }
+  private static SslContextFactory getSslContextFactory() {
+    SslContextFactory sslContextFactory = new SslContextFactory.Server();
+    URL resource = Utils.class.getResource("/keystore.jks");
+    if (resource == null) {
+      logger.info("Couldn't find keystore at src/main/resources/keystore.jks");
+      return null;
+    } else {
+      logger.info("Using keystore for HTTPS");
+    }
 
-  public String getMessage() { return message; }
+    sslContextFactory.setKeyStorePath(resource.toExternalForm());
+    sslContextFactory.setKeyStorePassword("password");
+    return sslContextFactory;
+  }
 }

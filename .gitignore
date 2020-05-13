@@ -1,10 +1,6 @@
 # Ignore Gradle project-specific cache directory
 .gradle
 
-gradle/*
-gradlew
-gradlew.bat
-
 # Environment vars
 .env
 
@@ -17,7 +13,19 @@ gradlew.bat
 # Ignore Gradle build output directory
 .build
 
+# Ignore logging files
+*.log
+
 /postgres/*
 !/postgres/.gitkeep
 
 .kotlintest
+
+logging.txt
+tables.db
+
+src/main/java/database/generated
+src/main/resources/keystore.jks
+
+/local/*
+/index/*

@@ -1,6 +1,6 @@
 package scraping.models;
 
-import models.SubjectCode;
+import nyu.SubjectCode;
 
 public class CatalogQueryData {
 
@@ -16,7 +16,5 @@ public class CatalogQueryData {
 
   public String getData() { return data; }
 
-  public String toString() {
-    return getSubject() + "data is: " + getData();
-  }
+  public String toString() { return getData(); }
 }
